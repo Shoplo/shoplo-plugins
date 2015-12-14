@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: variants.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: variants.js</h1>
+
+
+
+
+
+
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/*jslint browser: true*/
+/*global $, jQuery, alert, console, dict, prices, pricesRegular, images, shipping*/
+
+(function ($) {
+    'use strict';
+
+    $.fn.productVariants = function (options) {
+        var s,
+            gs = $.extend({}, $.fn.productVariants.defaults, options),
+            ProductVariants = {
+                settings: {
+                    inputVariantId: $(gs.inputVariantId),
+                    newPriceWrapper: $(gs.newPriceWrapper),
+                    oldPriceWrapper: $(gs.oldPriceWrapper),
+                    thumbsWrapper: $(gs.thumbsWrapper),
+                    shippingInfoWrapper: $(gs.shippingInfoWrapper),
+                    shippingInfo: gs.shippingInfo,
+                    propertyHandler: $(gs.propertyHandler),
+                    propertiesHandler: $(gs.propertiesHandler),
+                    propertyContainer: $(gs.propertyContainer),
+                    firstOption: $(gs.variantsContainer).find(gs.propertyContainer).eq(0),
+                    secondOption: $(gs.variantsContainer).find(gs.propertyContainer).eq(1),
+                    thirdOption: $(gs.variantsContainer).find(gs.propertyContainer).eq(2),
+                    addToCartButton: $(gs.addToCartButton),
+                    changeAddToCartButtonState: gs.changeAddToCartButtonState
+                },
+
+                init: function () {
+                    s = this.settings;
+
+                    this.bindUIActions();
+                    this.initForm();
+                },
+
+                bindUIActions: function () {
+                    s.propertyHandler.on('click', function () {
+                        var $this = $(this);
+
+                        //** if property is disabled do nothing
+                        if ($this.hasClass('unavailable')) {
+                            return false;
+                        } else {
+                            ProductVariants.selectProperty($this);
+                        }
+                    });
+
+                    s.propertiesHandler.on('change', function () {
+                        var $this = $(this);
+
+                        ProductVariants.selectProperty($this);
+                    });
+                },
+
+                selectProperty: function (property) {
+                    var propertyName = property.data('property-name'),
+                        /** propertyValue depends of its element type: 1.li element 2. select input */
+                        propertyValue = property.data('property-value') || property.val(),
+                        propertyNode = property.prop('tagName'),
+                        activeProperty = dict[propertyName][propertyValue],
+                        firstActivePropertyObject,
+                        secondActivePropertyObject,
+                        secondActiveProperty,
+                        activeProperties;
+
+                    /** if we clicked on a box property */
+                    if (propertyNode !== 'SELECT') {
+                        /** deactivate all atributes in this option */
+                        $(s.propertyContainer).find("[data-property-name='" + propertyName + "']").removeClass('active');
+
+                        /** make current active */
+                        property.addClass('active');
+                    }
+
+
+                    if (s.firstOption.has(property).length) {
+                        if (activeProperty === undefined) {
+                            if (s.secondOption.length !== 0) {
+                                ProductVariants.deactivateAllProperies(s.secondOption);
+                            }
+                            if (s.thirdOption.length !== 0) {
+                                ProductVariants.deactivateAllProperies(s.thirdOption);
+                            }
+                            if (s.changeAddToCartButtonState === true) {
+                                ProductVariants.setAddToCartButton(true);
+                            }
+                        } else {
+                            if (s.secondOption.length !== 0) {
+                                /** go to second option and deactivate properies */
+                                ProductVariants.deactivateUnavailableProperties(s.secondOption, activeProperty);
+
+                                /** go to second option and choose first available property */
+                                ProductVariants.setFirstAvailebleProperty(s.secondOption);
+                            }
+                            if (s.thirdOption.length !== 0) {
+                                firstActivePropertyObject = ProductVariants.getActiveProperty(s.firstOption);
+                                secondActivePropertyObject = ProductVariants.getActiveProperty(s.secondOption);
+                                secondActiveProperty = dict[secondActivePropertyObject.name][firstActivePropertyObject.value][secondActivePropertyObject.value];
+
+                                ProductVariants.deactivateUnavailableProperties(s.thirdOption, secondActiveProperty);
+                                ProductVariants.setFirstAvailebleProperty(s.thirdOption);
+                            }
+                        }
+                        ProductVariants.setActiveVariant(property);
+                    }
+
+                    if (s.secondOption.has(property).length) {
+                        if (s.thirdOption.length) {
+                            firstActivePropertyObject = ProductVariants.getActiveProperty(s.firstOption);
+                            secondActivePropertyObject = ProductVariants.getActiveProperty(s.secondOption);
+                            activeProperties = dict[secondActivePropertyObject.name][firstActivePropertyObject.value][secondActivePropertyObject.value];
+
+                            ProductVariants.deactivateUnavailableProperties(s.thirdOption, activeProperties);
+                            ProductVariants.setFirstAvailebleProperty(s.thirdOption);
+                        }
+                        ProductVariants.setActiveVariant(property);
+                    }
+
+                    if (s.thirdOption.has(property).length) {
+                        ProductVariants.setActiveVariant(property);
+                    }
+                },
+
+                getActiveProperty: function (property) {
+                    var selectProperties = property.find('select'),
+                        activePropertyObject;
+
+                    if (selectProperties.length) {
+                        activePropertyObject = {
+                            name: selectProperties.data('property-name'),
+                            value: selectProperties.val()
+                        };
+                    } else {
+                        property.find(s.propertyHandler).each(function () {
+                            if ($(this).hasClass('active')) {
+                                var $this = $(this);
+                                activePropertyObject = {
+                                    name: $this.data('property-name'),
+                                    value: $this.data('property-value')
+                                };
+                            }
+                        });
+                    }
+                    return activePropertyObject;
+                },
+
+                setActiveVariant: function (property) {
+                    var propertyName = property.data('property-name'),
+                        /** propertyValue depends of its element type: 1.li element 2. select input */
+                        propertyValue = property.data('property-value') || property.val(),
+                        search = dict[propertyName][propertyValue],
+                        variantId = '';
+
+                    if (typeof (search) !== 'undefined') {
+                        if (typeof (search) === 'number' &amp;&amp; search > 0) {
+                            variantId = search;
+                        } else {
+                            s.propertyContainer.each(function () {
+                                var selectProperties = $(this).find('select');
+                                if (selectProperties.length) {
+                                    s.propertiesHandler.each(function () {
+                                        var $this = $(this);
+                                        if (typeof (search[$this.val()]) !== 'undefined') {
+                                            if (typeof (search[$this.val()]) === 'object') {
+                                                search = search[$this.val()];
+                                            }
+                                            variantId = search[$this.val()];
+                                        }
+                                    });
+                                } else {
+                                    s.propertyHandler.each(function () {
+                                        var $this = $(this);
+                                        if (typeof (search[$this.data('property-value')]) !== 'undefined' &amp;&amp; $this.hasClass('active')) {
+                                            if (typeof (search[$this.data('property-value')]) === 'object') {
+                                                search = search[$this.data('property-value')];
+                                            }
+                                            variantId = search[$this.data('property-value')];
+                                        }
+                                    });
+                                }
+                            });
+
+                        }
+                        console.log('variantId', variantId);
+                        /** set variant id */
+                        s.inputVariantId.val(variantId);
+
+                        ProductVariants.setNewPrice(variantId);
+                        ProductVariants.setNewImage(variantId);
+                        ProductVariants.setNewShippingInfo(variantId);
+                        if (s.changeAddToCartButtonState === true) {
+                            ProductVariants.setAddToCartButton(false);
+                        }
+                    }
+                },
+
+                setFirstAvailebleProperty: function (option) {
+                    var selectProperties = option.find('select');
+
+                    if (selectProperties.length) {
+                        selectProperties.find('option').removeAttr('selected', 'selected');
+                        selectProperties.find('option:enabled').first().attr('selected', 'selected');
+                    } else {
+                        option.find(s.propertyHandler).not('.unavailable').first().addClass('active');
+                    }
+                },
+
+                deactivateUnavailableProperties: function (option, activeProperty) {
+                    var selectProperties = option.find('select');
+
+                    /** Check if option has select properties*/
+                    if (selectProperties.length) {
+                        selectProperties.find('option').each(function () {
+                            var $this = $(this);
+                            if (typeof (activeProperty[$this.data('property-value')]) === 'undefined') {
+                                $this.prop('disabled', true);
+                            } else {
+                                if (typeof (activeProperty[$this.data('property-value')]) === 'undefined') {
+                                    $this.prop('disabled', true);
+                                } else {
+                                    $this.prop('disabled', false);
+                                }
+                            }
+                        });
+                    } else {
+                        option.find(s.propertyHandler).each(function () {
+                            var $this = $(this);
+                            $this.removeClass('active');
+                            if (typeof (activeProperty[$this.data('property-value')]) === 'undefined') {
+                                $this.addClass('unavailable');
+                            } else {
+                                $this.removeClass('unavailable');
+                            }
+                        });
+                    }
+
+                },
+
+                deactivateAllProperies: function (option) {
+                    var selectProperties = option.find('select');
+                    /** Check if option has select properties*/
+                    if (selectProperties.length) {
+                        selectProperties.find('option').each(function () {
+                            $(this).prop('disabled', true);
+                        });
+                    } else {
+                        option.find(s.propertyHandler).each(function () {
+                            $(this).addClass('unavailable').removeClass('active');
+                        });
+                    }
+
+                    console.log('option', option.find('select'));
+                },
+
+                setAddToCartButton: function (condition) {
+                    s.addToCartButton.prop('disabled', condition);
+                },
+
+                setNewPrice: function (variantId) {
+                    s.newPriceWrapper.text(prices[variantId]);
+                    if (s.oldPriceWrapper) {
+                        s.oldPriceWrapper.text(pricesRegular[variantId]);
+                    }
+                },
+
+                /**
+                    Probably we have to find better solution for replacing images.
+                    There are too many variables, that have to be set correctly.
+
+                    #images in product matrix
+                    #it has to be carousel with thumbs
+                */
+
+                setNewImage: function (variantId) {
+                    var thumb = s.thumbsWrapper.find('li'),
+                        i;
+
+                    for (i = 0; i &lt; thumb.length; i += 1) {
+                        if ($(thumb[i]).find('img').attr('src') === images[variantId]) {
+                            $(thumb[i]).find('img').trigger('click');
+                        }
+                    }
+                },
+
+                setNewShippingInfo: function (variantId) {
+                    var shippingDefault = s.shippingInfoWrapper.data('shipping-default');
+                    if (s.shippingInfoWrapper.length) {
+                        if (shipping[variantId].length) {
+                            s.shippingInfoWrapper.find(s.shippingInfo).html(shipping[variantId]);
+                        } else {
+                            s.shippingInfoWrapper.find(s.shippingInfo).html(shippingDefault);
+                        }
+                    }
+                },
+
+                /**
+                * @param {object} property - property object
+                * @param {string} type - node type, we have to distingue nodes for diferent functions
+                */
+                initHelper: function (property, type, single) {
+
+                },
+
+
+                initForm: function () {
+                    var selectProperties = s.firstOption.find('select'),
+                        properties,
+                        i,
+                        active = false,
+                        currentProperty,
+                        currentPropertyId;
+                    /** if second option exist, run regular init, else run single option one */
+                    if (s.secondOption.length) {
+                        if (selectProperties.length) {
+                            properties = selectProperties.find('option');
+
+                            for (i = 0; i &lt; properties.length; i += 1) {
+                                currentProperty = $(properties[i]);
+                                currentPropertyId = dict[selectProperties.data('property-name')][currentProperty.data('property-value')];
+                                if (currentPropertyId !== undefined &amp;&amp; active === false) {
+                                    currentProperty.prop('selected', true);
+                                    active = true;
+                                }
+                            }
+
+                        } else {
+                            properties = s.firstOption.find(s.propertyHandler);
+                            for (i = 0; i &lt; properties.length; i += 1) {
+                                currentProperty = $(properties[i]);
+                                currentPropertyId = dict[currentProperty.data('property-name')][currentProperty.data('property-value')];
+                                if (currentPropertyId !== undefined &amp;&amp; active === false) {
+                                    currentProperty.trigger('click');
+                                    active = true;
+                                }
+                            }
+                        }
+                    } else {
+                        if (selectProperties.length) {
+                            /** disable disabled properties, and select firs available */
+                            properties = selectProperties.find('option');
+
+                            for (i = 0; i &lt; properties.length; i += 1) {
+                                currentProperty = $(properties[i]);
+                                currentPropertyId = dict[selectProperties.data('property-name')][currentProperty.data('property-value')];
+                                if (currentPropertyId === undefined) {
+                                    currentProperty.prop('disabled', true);
+                                } else if (active === false) {
+                                    currentProperty.prop('selected', true);
+                                    active = true;
+                                }
+                            }
+                        } else {
+                            properties = s.firstOption.find(s.propertyHandler);
+
+                            /** add unavailable class to disabled properties */
+                            for (i = 0; i &lt; properties.length; i += 1) {
+                                currentProperty = $(properties[i]);
+                                currentPropertyId = dict[currentProperty.data('property-name')][currentProperty.data('property-value')];
+                                if (currentPropertyId === undefined) {
+                                    currentProperty.addClass('unavailable');
+                                } else if (active === false) {
+                                    currentProperty.trigger('click');
+                                    active = true;
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+
+            };
+
+        return ProductVariants.init();
+
+    };
+
+    $.fn.productVariants.defaults = {
+        variantsContainer: '#variants',
+        propertyContainer: '.option',
+        propertyHandler: '.property',   // for box properties
+        propertiesHandler: '.properties', //for properties in select input
+        addToCartButton: '#addToCart',
+        changeAddToCartButtonState: true, //if active, we change add to cart button to disable when current variant i disabled
+        inputVariantId: 'input[name=id]',
+        newPriceWrapper: '.new-price',
+        oldPriceWrapper: '.old-price',
+        thumbsWrapper: '#thumbsGallery',
+        shippingInfoWrapper: '#shippingInfo',
+        shippingInfo: 'p'
+    };
+
+}(jQuery));</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Dec 14 2015 10:18:29 GMT+0100 (CET)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
