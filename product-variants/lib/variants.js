@@ -22,7 +22,8 @@
                     secondOption: $(gs.variantsContainer).find(gs.propertyContainer).eq(1),
                     thirdOption: $(gs.variantsContainer).find(gs.propertyContainer).eq(2),
                     addToCartButton: $(gs.addToCartButton),
-                    changeAddToCartButtonState: gs.changeAddToCartButtonState
+                    changeAddToCartButtonState: gs.changeAddToCartButtonState,
+                    selectricSelect: gs.selectricSelect
                 },
 
                 init: function () {
@@ -36,7 +37,7 @@
                     s.propertyHandler.on('click', function () {
                         var $this = $(this);
 
-                        //** if property is disabled do nothing
+                        /** if property is disabled do nothing */
                         if ($this.hasClass('unavailable')) {
                             return false;
                         } else {
@@ -180,7 +181,7 @@
                             });
 
                         }
-                        console.log('variantId', variantId);
+
                         /** set variant id */
                         s.inputVariantId.val(variantId);
 
@@ -199,6 +200,9 @@
                     if (selectProperties.length) {
                         selectProperties.find('option').removeAttr('selected', 'selected');
                         selectProperties.find('option:enabled').first().attr('selected', 'selected');
+                        if (s.selectricSelect === true) {
+                            selectProperties.selectric('refresh');
+                        }
                     } else {
                         option.find(s.propertyHandler).not('.unavailable').first().addClass('active');
                     }
@@ -219,6 +223,9 @@
                                 } else {
                                     $this.prop('disabled', false);
                                 }
+                            }
+                            if (s.selectricSelect === true) {
+                                selectProperties.selectric('refresh');
                             }
                         });
                     } else {
@@ -247,8 +254,6 @@
                             $(this).addClass('unavailable').removeClass('active');
                         });
                     }
-
-                    console.log('option', option.find('select'));
                 },
 
                 setAddToCartButton: function (condition) {
@@ -269,7 +274,6 @@
                     #images in product matrix
                     #it has to be carousel with thumbs
                 */
-
                 setNewImage: function (variantId) {
                     var thumb = s.thumbsWrapper.find('li'),
                         i;
@@ -312,12 +316,13 @@
                     if (s.secondOption.length) {
                         if (selectProperties.length) {
                             properties = selectProperties.find('option');
-
+                            console.log('init');
                             for (i = 0; i < properties.length; i += 1) {
                                 currentProperty = $(properties[i]);
                                 currentPropertyId = dict[selectProperties.data('property-name')][currentProperty.data('property-value')];
                                 if (currentPropertyId !== undefined && active === false) {
                                     currentProperty.prop('selected', true);
+                                    currentProperty.change();
                                     active = true;
                                 }
                             }
@@ -345,6 +350,7 @@
                                     currentProperty.prop('disabled', true);
                                 } else if (active === false) {
                                     currentProperty.prop('selected', true);
+                                    currentProperty.change();
                                     active = true;
                                 }
                             }
@@ -366,8 +372,6 @@
 
                     }
                 }
-
-
             };
 
         return ProductVariants.init();
@@ -386,7 +390,8 @@
         oldPriceWrapper: '.old-price',
         thumbsWrapper: '#thumbsGallery',
         shippingInfoWrapper: '#shippingInfo',
-        shippingInfo: 'p'
+        shippingInfo: 'p',
+        selectricSelect: false
     };
 
 }(jQuery));
