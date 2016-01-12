@@ -48,7 +48,9 @@
                     s.propertiesHandler.on('change', function () {
                         var $this = $(this);
 
-                        ProductVariants.selectProperty($this);
+                        if (!$this.hasClass('selectricWrapper')) {
+                            ProductVariants.selectProperty($this);
+						}
                     });
                 },
 
