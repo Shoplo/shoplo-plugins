@@ -63,7 +63,8 @@
                         firstActivePropertyObject,
                         secondActivePropertyObject,
                         secondActiveProperty,
-                        activeProperties;
+                        activeProperties,
+                        propertyIndex;
 
                     /** if we clicked on a box property */
                     if (propertyNode !== 'SELECT') {
@@ -103,7 +104,8 @@
                                 ProductVariants.setFirstAvailebleProperty(s.thirdOption);
                             }
                         }
-                        ProductVariants.setActiveVariant(property);
+                        propertyIndex = 1;
+                        ProductVariants.setActiveVariant(property, propertyIndex);
                     }
 
                     if (s.secondOption.has(property).length) {
@@ -115,11 +117,13 @@
                             ProductVariants.deactivateUnavailableProperties(s.thirdOption, activeProperties);
                             ProductVariants.setFirstAvailebleProperty(s.thirdOption);
                         }
-                        ProductVariants.setActiveVariant(property);
+                        propertyIndex = 2;
+                        ProductVariants.setActiveVariant(property, propertyIndex);
                     }
 
                     if (s.thirdOption.has(property).length) {
-                        ProductVariants.setActiveVariant(property);
+                        propertyIndex = 3;
+                        ProductVariants.setActiveVariant(property, propertyIndex);
                     }
                 },
 
@@ -146,44 +150,57 @@
                     return activePropertyObject;
                 },
 
-                setActiveVariant: function (property) {
+                setActiveVariant: function (property, propertyIndex) {
                     var propertyName = property.data('property-name'),
                         /** propertyValue depends of its element type: 1.li element 2. select input */
                         propertyValue = property.data('property-value') || property.val(),
-                        search = dict[propertyName][propertyValue],
-                        variantId = '';
-
-                    if (typeof (search) !== 'undefined') {
-                        if (typeof (search) === 'number' && search > 0) {
-                            variantId = search;
-                        } else {
-                            s.propertyContainer.each(function () {
-                                var selectProperties = $(this).find('select');
-                                if (selectProperties.length) {
-                                    s.propertiesHandler.each(function () {
-                                        var $this = $(this);
-                                        if (typeof (search[$this.val()]) !== 'undefined') {
-                                            if (typeof (search[$this.val()]) === 'object') {
-                                                search = search[$this.val()];
-                                            }
-                                            variantId = search[$this.val()];
-                                        }
-                                    });
-                                } else {
-                                    s.propertyHandler.each(function () {
-                                        var $this = $(this);
-                                        if (typeof (search[$this.data('property-value')]) !== 'undefined' && $this.hasClass('active')) {
-                                            if (typeof (search[$this.data('property-value')]) === 'object') {
-                                                search = search[$this.data('property-value')];
-                                            }
-                                            variantId = search[$this.data('property-value')];
-                                        }
-                                    });
-                                }
-                            });
-
+                        search,
+                        levels = s.propertyContainer.length,
+                        variantId = '',
+                        firstOptionValue,
+                        secondOptionValue,
+                        thirdOptionValue;
+                    
+                    console.log('levels', levels);
+                    
+                    if (propertyIndex !== 1 && s.firstOption.length !== 0) {
+                        firstOptionValue = s.firstOption.find('select').val();
+                    }
+                    
+                    if (propertyIndex !== 2 && s.secondOption.length !== 0) {
+                        secondOptionValue = s.secondOption.find('select').val();
+                    }
+                    
+                    if (propertyIndex !== 3 && s.thirdOption.length !== 0) {
+                        thirdOptionValue = s.thirdOption.find('select').val();
+                    }
+                    
+                    if (propertyIndex === 1) {
+                        if (levels === 1) {
+                            variantId = dict[propertyName][propertyValue];
+                        } else if (levels === 2) {
+                            variantId = dict[propertyName][propertyValue][secondOptionValue];
+                        } else if (levels === 3) {
+                            variantId = dict[propertyName][propertyValue][secondOptionValue][thirdOptionValue];
                         }
-
+                        
+                    } else if (propertyIndex === 2) {
+                        if (levels === 2) {
+                            variantId = dict[propertyName][firstOptionValue][propertyValue];
+                        } else if (levels === 3) {
+                            variantId = dict[propertyName][firstOptionValue][propertyValue][thirdOptionValue];
+                        }
+                        
+                    } else if (propertyIndex === 3) {
+                        if (levels === 3) {
+                            variantId = dict[propertyName][firstOptionValue][secondOptionValue][propertyValue];
+                        }
+                    }
+                    
+                    console.log('name', propertyName, 'value ', propertyValue, ' id ', variantId);
+                    if (typeof (variantId) !== 'undefined') {
+                        
+                        console.log('variantId', variantId);
                         /** set variant id */
                         s.inputVariantId.val(variantId);
 
@@ -318,7 +335,6 @@
                     if (s.secondOption.length) {
                         if (selectProperties.length) {
                             properties = selectProperties.find('option');
-                            console.log('init');
                             for (i = 0; i < properties.length; i += 1) {
                                 currentProperty = $(properties[i]);
                                 currentPropertyId = dict[selectProperties.data('property-name')][currentProperty.data('property-value')];
