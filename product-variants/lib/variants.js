@@ -160,19 +160,17 @@
                         firstOptionValue,
                         secondOptionValue,
                         thirdOptionValue;
-                    
-                    console.log('levels', levels);
-                    
+                                        
                     if (propertyIndex !== 1 && s.firstOption.length !== 0) {
-                        firstOptionValue = s.firstOption.find('select').val();
+                        firstOptionValue = s.firstOption.find('select').val() || s.firstOption.find('.property.active').data('property-value');
                     }
                     
                     if (propertyIndex !== 2 && s.secondOption.length !== 0) {
-                        secondOptionValue = s.secondOption.find('select').val();
+                        secondOptionValue = s.secondOption.find('select').val() || s.secondOption.find('.property.active').data('property-value');
                     }
                     
                     if (propertyIndex !== 3 && s.thirdOption.length !== 0) {
-                        thirdOptionValue = s.thirdOption.find('select').val();
+                        thirdOptionValue = s.thirdOption.find('select').val() || s.thirdOptionValue.find('.property.active').data('property-value');
                     }
                     
                     if (propertyIndex === 1) {
@@ -197,7 +195,6 @@
                         }
                     }
                     
-                    console.log('name', propertyName, 'value ', propertyValue, ' id ', variantId);
                     if (typeof (variantId) !== 'undefined') {
                         
                         console.log('variantId', variantId);
