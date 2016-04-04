@@ -154,60 +154,63 @@
                     var propertyName = property.data('property-name'),
                         /** propertyValue depends of its element type: 1.li element 2. select input */
                         propertyValue = property.data('property-value') || property.val(),
-                        search,
+                        search = dict[propertyName][propertyValue],
                         levels = s.propertyContainer.length,
                         variantId = '',
                         firstOptionValue,
                         secondOptionValue,
                         thirdOptionValue;
-                                        
-                    if (propertyIndex !== 1 && s.firstOption.length !== 0) {
-                        firstOptionValue = s.firstOption.find('select').val() || s.firstOption.find('.property.active').data('property-value');
-                    }
-                    
-                    if (propertyIndex !== 2 && s.secondOption.length !== 0) {
-                        secondOptionValue = s.secondOption.find('select').val() || s.secondOption.find('.property.active').data('property-value');
-                    }
-                    
-                    if (propertyIndex !== 3 && s.thirdOption.length !== 0) {
-                        thirdOptionValue = s.thirdOption.find('select').val() || s.thirdOptionValue.find('.property.active').data('property-value');
-                    }
-                    
-                    if (propertyIndex === 1) {
-                        if (levels === 1) {
-                            variantId = dict[propertyName][propertyValue];
-                        } else if (levels === 2) {
-                            variantId = dict[propertyName][propertyValue][secondOptionValue];
-                        } else if (levels === 3) {
-                            variantId = dict[propertyName][propertyValue][secondOptionValue][thirdOptionValue];
-                        }
-                        
-                    } else if (propertyIndex === 2) {
-                        if (levels === 2) {
-                            variantId = dict[propertyName][firstOptionValue][propertyValue];
-                        } else if (levels === 3) {
-                            variantId = dict[propertyName][firstOptionValue][propertyValue][thirdOptionValue];
-                        }
-                        
-                    } else if (propertyIndex === 3) {
-                        if (levels === 3) {
-                            variantId = dict[propertyName][firstOptionValue][secondOptionValue][propertyValue];
-                        }
-                    }
-                    
-                    if (typeof (variantId) !== 'undefined') {
-                        
-                        console.log('variantId', variantId);
-                        /** set variant id */
-                        s.inputVariantId.val(variantId);
 
-                        ProductVariants.setNewPrice(variantId);
-                        ProductVariants.setNewImage(variantId);
-                        ProductVariants.setNewShippingInfo(variantId);
-                        if (s.changeAddToCartButtonState === true) {
-                            ProductVariants.setAddToCartButton(false);
+                    // if(search !== undefined){                
+                        if (propertyIndex !== 1 && s.firstOption.length !== 0) {
+                            firstOptionValue = s.firstOption.find('select').val() || s.firstOption.find('.property.active').data('property-value');
                         }
-                    }
+                        
+                        if (propertyIndex !== 2 && s.secondOption.length !== 0) {
+                            secondOptionValue = s.secondOption.find('select').val() || s.secondOption.find('.property.active').data('property-value');
+                        }
+                        
+                        if (propertyIndex !== 3 && s.thirdOption.length !== 0) {
+                            
+                            thirdOptionValue = s.thirdOption.find('select').val() || s.thirdOptionValue.find('.property.active').data('property-value');
+                        }
+                        
+                        if (propertyIndex === 1) {
+                            if (levels === 1) {
+                                variantId = dict[propertyName][propertyValue];
+                            } else if (levels === 2) {
+                                variantId = dict[propertyName][propertyValue][secondOptionValue];
+                            } else if (levels === 3) {
+                                variantId = dict[propertyName][propertyValue][secondOptionValue][thirdOptionValue];
+                            }
+                            
+                        } else if (propertyIndex === 2) {
+                            if (levels === 2) {
+                                variantId = dict[propertyName][firstOptionValue][propertyValue];
+                            } else if (levels === 3) {
+                                variantId = dict[propertyName][firstOptionValue][propertyValue][thirdOptionValue];
+                            }
+                            
+                        } else if (propertyIndex === 3) {
+                            if (levels === 3) {
+                                variantId = dict[propertyName][firstOptionValue][secondOptionValue][propertyValue];
+                            }
+                        }
+                        
+                        if (typeof (variantId) !== 'undefined') {
+                            
+                            console.log('variantId', variantId);
+                            /** set variant id */
+                            s.inputVariantId.val(variantId);
+
+                            ProductVariants.setNewPrice(variantId);
+                            ProductVariants.setNewImage(variantId);
+                            ProductVariants.setNewShippingInfo(variantId);
+                            if (s.changeAddToCartButtonState === true) {
+                                ProductVariants.setAddToCartButton(false);
+                            }
+                        }
+                    // }
                 },
 
                 setFirstAvailebleProperty: function (option) {
@@ -335,11 +338,16 @@
                             for (i = 0; i < properties.length; i += 1) {
                                 currentProperty = $(properties[i]);
                                 currentPropertyId = dict[selectProperties.data('property-name')][currentProperty.data('property-value')];
+                                console.log('currentPropertyId', currentPropertyId);
                                 if (currentPropertyId !== undefined && active === false) {
                                     currentProperty.prop('selected', true);
                                     currentProperty.change();
                                     active = true;
                                 }
+                                if (currentPropertyId === undefined) {
+                                    currentProperty.prop('disabled', true);
+                                }
+                                
                             }
 
                         } else {
@@ -350,6 +358,9 @@
                                 if (currentPropertyId !== undefined && active === false) {
                                     currentProperty.trigger('click');
                                     active = true;
+                                }
+                                if (currentPropertyId === undefined) {
+                                    currentProperty.addClass('unavailable');
                                 }
                             }
                         }
@@ -386,6 +397,9 @@
                         }
 
                     }
+                    if (s.selectricSelect === true) {
+                        selectProperties.selectric('refresh');
+                    }
                 }
             };
 
@@ -397,7 +411,7 @@
         variantsContainer: '#variants',
         propertyContainer: '.option',
         propertyHandler: '.property',   // for box properties
-        propertiesHandler: '.properties', //for properties in select input
+        propertiesHandler: 'select.properties', //for properties in select input
         addToCartButton: '#addToCart',
         changeAddToCartButtonState: true, //if active, we change add to cart button to disable when current variant i disabled
         inputVariantId: 'input[name=id]',
@@ -406,7 +420,7 @@
         thumbsWrapper: '#thumbsGallery',
         shippingInfoWrapper: '#shippingInfo',
         shippingInfo: 'p',
-        selectricSelect: false
+        selectricSelect: true
     };
 
 }(jQuery));
