@@ -22,7 +22,8 @@
                     secondOption: $(gs.variantsContainer).find(gs.propertyContainer).eq(1),
                     thirdOption: $(gs.variantsContainer).find(gs.propertyContainer).eq(2),
                     addToCartButton: $(gs.addToCartButton),
-                    changeAddToCartButtonState: gs.changeAddToCartButtonState
+                    changeAddToCartButtonState: gs.changeAddToCartButtonState,
+                    selectricSelect: gs.selectricSelect
                 },
 
                 init: function () {
@@ -36,7 +37,7 @@
                     s.propertyHandler.on('click', function () {
                         var $this = $(this);
 
-                        //** if property is disabled do nothing
+                        /** if property is disabled do nothing */
                         if ($this.hasClass('unavailable')) {
                             return false;
                         } else {
@@ -47,7 +48,9 @@
                     s.propertiesHandler.on('change', function () {
                         var $this = $(this);
 
-                        ProductVariants.selectProperty($this);
+                        if (!$this.hasClass('selectricWrapper')) {
+                            ProductVariants.selectProperty($this);
+						}
                     });
                 },
 
@@ -60,7 +63,8 @@
                         firstActivePropertyObject,
                         secondActivePropertyObject,
                         secondActiveProperty,
-                        activeProperties;
+                        activeProperties,
+                        propertyIndex;
 
                     /** if we clicked on a box property */
                     if (propertyNode !== 'SELECT') {
@@ -100,7 +104,8 @@
                                 ProductVariants.setFirstAvailebleProperty(s.thirdOption);
                             }
                         }
-                        ProductVariants.setActiveVariant(property);
+                        propertyIndex = 1;
+                        ProductVariants.setActiveVariant(property, propertyIndex);
                     }
 
                     if (s.secondOption.has(property).length) {
@@ -112,11 +117,13 @@
                             ProductVariants.deactivateUnavailableProperties(s.thirdOption, activeProperties);
                             ProductVariants.setFirstAvailebleProperty(s.thirdOption);
                         }
-                        ProductVariants.setActiveVariant(property);
+                        propertyIndex = 2;
+                        ProductVariants.setActiveVariant(property, propertyIndex);
                     }
 
                     if (s.thirdOption.has(property).length) {
-                        ProductVariants.setActiveVariant(property);
+                        propertyIndex = 3;
+                        ProductVariants.setActiveVariant(property, propertyIndex);
                     }
                 },
 
@@ -143,54 +150,67 @@
                     return activePropertyObject;
                 },
 
-                setActiveVariant: function (property) {
+                setActiveVariant: function (property, propertyIndex) {
                     var propertyName = property.data('property-name'),
                         /** propertyValue depends of its element type: 1.li element 2. select input */
                         propertyValue = property.data('property-value') || property.val(),
                         search = dict[propertyName][propertyValue],
-                        variantId = '';
+                        levels = s.propertyContainer.length,
+                        variantId = '',
+                        firstOptionValue,
+                        secondOptionValue,
+                        thirdOptionValue;
 
-                    if (typeof (search) !== 'undefined') {
-                        if (typeof (search) === 'number' && search > 0) {
-                            variantId = search;
-                        } else {
-                            s.propertyContainer.each(function () {
-                                var selectProperties = $(this).find('select');
-                                if (selectProperties.length) {
-                                    s.propertiesHandler.each(function () {
-                                        var $this = $(this);
-                                        if (typeof (search[$this.val()]) !== 'undefined') {
-                                            if (typeof (search[$this.val()]) === 'object') {
-                                                search = search[$this.val()];
-                                            }
-                                            variantId = search[$this.val()];
-                                        }
-                                    });
-                                } else {
-                                    s.propertyHandler.each(function () {
-                                        var $this = $(this);
-                                        if (typeof (search[$this.data('property-value')]) !== 'undefined' && $this.hasClass('active')) {
-                                            if (typeof (search[$this.data('property-value')]) === 'object') {
-                                                search = search[$this.data('property-value')];
-                                            }
-                                            variantId = search[$this.data('property-value')];
-                                        }
-                                    });
-                                }
-                            });
-
+                    // if(search !== undefined){                
+                        if (propertyIndex !== 1 && s.firstOption.length !== 0) {
+                            firstOptionValue = s.firstOption.find('select').val() || s.firstOption.find('.property.active').data('property-value');
                         }
-                        console.log('variantId', variantId);
-                        /** set variant id */
-                        s.inputVariantId.val(variantId);
-
-                        ProductVariants.setNewPrice(variantId);
-                        ProductVariants.setNewImage(variantId);
-                        ProductVariants.setNewShippingInfo(variantId);
-                        if (s.changeAddToCartButtonState === true) {
-                            ProductVariants.setAddToCartButton(false);
+                        
+                        if (propertyIndex !== 2 && s.secondOption.length !== 0) {
+                            secondOptionValue = s.secondOption.find('select').val() || s.secondOption.find('.property.active').data('property-value');
                         }
-                    }
+                        
+                        if (propertyIndex !== 3 && s.thirdOption.length !== 0) {
+                            
+                            thirdOptionValue = s.thirdOption.find('select').val() || s.thirdOptionValue.find('.property.active').data('property-value');
+                        }
+                        
+                        if (propertyIndex === 1) {
+                            if (levels === 1) {
+                                variantId = dict[propertyName][propertyValue];
+                            } else if (levels === 2) {
+                                variantId = dict[propertyName][propertyValue][secondOptionValue];
+                            } else if (levels === 3) {
+                                variantId = dict[propertyName][propertyValue][secondOptionValue][thirdOptionValue];
+                            }
+                            
+                        } else if (propertyIndex === 2) {
+                            if (levels === 2) {
+                                variantId = dict[propertyName][firstOptionValue][propertyValue];
+                            } else if (levels === 3) {
+                                variantId = dict[propertyName][firstOptionValue][propertyValue][thirdOptionValue];
+                            }
+                            
+                        } else if (propertyIndex === 3) {
+                            if (levels === 3) {
+                                variantId = dict[propertyName][firstOptionValue][secondOptionValue][propertyValue];
+                            }
+                        }
+                        
+                        if (typeof (variantId) !== 'undefined') {
+                            
+                            console.log('variantId', variantId);
+                            /** set variant id */
+                            s.inputVariantId.val(variantId);
+
+                            ProductVariants.setNewPrice(variantId);
+                            ProductVariants.setNewImage(variantId);
+                            ProductVariants.setNewShippingInfo(variantId);
+                            if (s.changeAddToCartButtonState === true) {
+                                ProductVariants.setAddToCartButton(false);
+                            }
+                        }
+                    // }
                 },
 
                 setFirstAvailebleProperty: function (option) {
@@ -199,6 +219,9 @@
                     if (selectProperties.length) {
                         selectProperties.find('option').removeAttr('selected', 'selected');
                         selectProperties.find('option:enabled').first().attr('selected', 'selected');
+                        if (s.selectricSelect === true) {
+                            selectProperties.selectric('refresh');
+                        }
                     } else {
                         option.find(s.propertyHandler).not('.unavailable').first().addClass('active');
                     }
@@ -219,6 +242,9 @@
                                 } else {
                                     $this.prop('disabled', false);
                                 }
+                            }
+                            if (s.selectricSelect === true) {
+                                selectProperties.selectric('refresh');
                             }
                         });
                     } else {
@@ -247,8 +273,6 @@
                             $(this).addClass('unavailable').removeClass('active');
                         });
                     }
-
-                    console.log('option', option.find('select'));
                 },
 
                 setAddToCartButton: function (condition) {
@@ -269,7 +293,6 @@
                     #images in product matrix
                     #it has to be carousel with thumbs
                 */
-
                 setNewImage: function (variantId) {
                     var thumb = s.thumbsWrapper.find('li'),
                         i;
@@ -312,14 +335,19 @@
                     if (s.secondOption.length) {
                         if (selectProperties.length) {
                             properties = selectProperties.find('option');
-
                             for (i = 0; i < properties.length; i += 1) {
                                 currentProperty = $(properties[i]);
                                 currentPropertyId = dict[selectProperties.data('property-name')][currentProperty.data('property-value')];
+                                console.log('currentPropertyId', currentPropertyId);
                                 if (currentPropertyId !== undefined && active === false) {
                                     currentProperty.prop('selected', true);
+                                    currentProperty.change();
                                     active = true;
                                 }
+                                if (currentPropertyId === undefined) {
+                                    currentProperty.prop('disabled', true);
+                                }
+                                
                             }
 
                         } else {
@@ -330,6 +358,9 @@
                                 if (currentPropertyId !== undefined && active === false) {
                                     currentProperty.trigger('click');
                                     active = true;
+                                }
+                                if (currentPropertyId === undefined) {
+                                    currentProperty.addClass('unavailable');
                                 }
                             }
                         }
@@ -345,6 +376,7 @@
                                     currentProperty.prop('disabled', true);
                                 } else if (active === false) {
                                     currentProperty.prop('selected', true);
+                                    currentProperty.change();
                                     active = true;
                                 }
                             }
@@ -365,9 +397,10 @@
                         }
 
                     }
+                    if (s.selectricSelect === true) {
+                        selectProperties.selectric('refresh');
+                    }
                 }
-
-
             };
 
         return ProductVariants.init();
@@ -378,7 +411,7 @@
         variantsContainer: '#variants',
         propertyContainer: '.option',
         propertyHandler: '.property',   // for box properties
-        propertiesHandler: '.properties', //for properties in select input
+        propertiesHandler: 'select.properties', //for properties in select input
         addToCartButton: '#addToCart',
         changeAddToCartButtonState: true, //if active, we change add to cart button to disable when current variant i disabled
         inputVariantId: 'input[name=id]',
@@ -386,7 +419,8 @@
         oldPriceWrapper: '.old-price',
         thumbsWrapper: '#thumbsGallery',
         shippingInfoWrapper: '#shippingInfo',
-        shippingInfo: 'p'
+        shippingInfo: 'p',
+        selectricSelect: true
     };
 
 }(jQuery));
