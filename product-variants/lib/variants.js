@@ -50,7 +50,7 @@
 
                         if (!$this.hasClass('selectricWrapper')) {
                             ProductVariants.selectProperty($this);
-						}
+                        }
                     });
                 },
 
@@ -333,12 +333,18 @@
                         currentPropertyId;
                     /** if second option exist, run regular init, else run single option one */
                     if (s.secondOption.length) {
+                        console.log('second option');
+                        throw new Error("my error message");
                         if (selectProperties.length) {
                             properties = selectProperties.find('option');
                             for (i = 0; i < properties.length; i += 1) {
                                 currentProperty = $(properties[i]);
-                                currentPropertyId = dict[selectProperties.data('property-name')][currentProperty.data('property-value')];
-                                console.log('currentPropertyId', currentPropertyId);
+                                    if (dict[selectProperties.data('property-name')] !== undefined) {
+                                        currentPropertyId = dict[selectProperties.data('property-name')][currentProperty.data('property-value')];
+                                    } else {
+                                        currentPropertyId = undefined;
+                                    }
+                            
                                 if (currentPropertyId !== undefined && active === false) {
                                     currentProperty.prop('selected', true);
                                     currentProperty.change();
@@ -354,7 +360,11 @@
                             properties = s.firstOption.find(s.propertyHandler);
                             for (i = 0; i < properties.length; i += 1) {
                                 currentProperty = $(properties[i]);
-                                currentPropertyId = dict[currentProperty.data('property-name')][currentProperty.data('property-value')];
+                                if (dict[currentProperty.data('property-name')] !== undefined) {
+                                    currentPropertyId = dict[currentProperty.data('property-name')][currentProperty.data('property-value')];
+                                } else {
+                                    currentPropertyId = undefined;
+                                }
                                 if (currentPropertyId !== undefined && active === false) {
                                     currentProperty.trigger('click');
                                     active = true;
@@ -365,13 +375,19 @@
                             }
                         }
                     } else {
+                        
                         if (selectProperties.length) {
                             /** disable disabled properties, and select firs available */
                             properties = selectProperties.find('option');
 
                             for (i = 0; i < properties.length; i += 1) {
                                 currentProperty = $(properties[i]);
-                                currentPropertyId = dict[selectProperties.data('property-name')][currentProperty.data('property-value')];
+                                    if (dict[selectProperties.data('property-name')] !== undefined) {
+                                        currentPropertyId = dict[selectProperties.data('property-name')][currentProperty.data('property-value')];
+                                    } else {
+                                        currentPropertyId = undefined;
+                                    }
+                                
                                 if (currentPropertyId === undefined) {
                                     currentProperty.prop('disabled', true);
                                 } else if (active === false) {
@@ -386,7 +402,11 @@
                             /** add unavailable class to disabled properties */
                             for (i = 0; i < properties.length; i += 1) {
                                 currentProperty = $(properties[i]);
-                                currentPropertyId = dict[currentProperty.data('property-name')][currentProperty.data('property-value')];
+                                if (dict[selectProperties.data('property-name')] !== undefined) {
+                                    currentPropertyId = dict[currentProperty.data('property-name')][currentProperty.data('property-value')];
+                                } else {
+                                    currentPropertyId = undefined;
+                                }
                                 if (currentPropertyId === undefined) {
                                     currentProperty.addClass('unavailable');
                                 } else if (active === false) {
